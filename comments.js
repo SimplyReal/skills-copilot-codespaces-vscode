@@ -1,44 +1,36 @@
 //create web server
-const http = require('http');
-const fs = require('fs');
+const express = require('express');
+const readline = require('readline-sync');
 const path = require('path');
-const port = 8000; // Change this to the desired port number
-const server = http.createServer((req, res) => {
-  let filePath = '.' + req.url;
 
-  if (filePath === './') {
-    filePath = './index.html'; // Serve 'index.html' as the default file
+const app = express();
+
+// Function to get the desired port number from the user
+function getPortFromUser() {
+  const defaultPort = 8000; // Default port if no input is provided
+  const portInput = readline.question(`Enter the port number (default: ${defaultPort}): `);
+
+  const port = parseInt(portInput, 10);
+
+  if (isNaN(port) || port <= 0 || port > 65535) {
+    console.log('Invalid port number. Using the default port.');
+    return defaultPort;
   }
 
-  const extname = String(path.extname(filePath)).toLowerCase();
-  const contentType = {
-    '.html': 'text/html',
-    '.js': 'text/javascript',
-    '.css': 'text/css',
-    '.json': 'application/json',
-    '.png': 'image/png',
-    '.jpg': 'image/jpg',
-    '.gif': 'image/gif',
-  };
+  return port;
+}
 
-  const contentTypeHeader = contentType[extname] || 'application/octet-stream';
+const port = getPortFromUser();
 
-  fs.readFile(filePath, (err, content) => {
-    if (err) {
-      if (err.code === 'ENOENT') {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('File not found');
-      } else {
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.end('Sorry, check with the site admin for error: ' + err.code);
-      }
-    } else {
-      res.writeHead(200, { 'Content-Type': contentTypeHeader });
-      res.end(content, 'utf-8');
-    }
-  });
+// Serve static files from the "public" directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Define a route for the default page
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-server.listen(port, () => {
+// Start the server
+app.listen(port, () => {
   console.log(`Server started on port ${port}`);
 });
